@@ -1,0 +1,39 @@
+{
+  "chapter": {
+    "number": "§ 001",
+    "studioLabel": "Estúdio de Software AI-Native"
+  },
+  "headline": {
+    "before": "Seu problema de software precisa de",
+    "accent": "um arquiteto."
+  },
+  "sub": {
+    "part1": "Não é um desenvolvedor. Não é um template.",
+    "part2": "Um sistema projetado para como sua empresa realmente funciona."
+  },
+  "detail": "Engenheiros sênior conduzem cada decisão. IA acelera a velocidade. O resultado: entregas três vezes mais rápidas, zero regressões em produção, e um time que não desaparece depois do lançamento.",
+  "cta": {
+    "primary": "Veja o Que Construímos",
+    "secondary": "Fale Conosco"
+  },
+  "scrollPrompt": "Rolar · Genesis",
+  "figureLabel": "Fig. 001 · O Objeto",
+  "nav": {
+    "item00": "INÍCIO",
+    "item01": "SERVIÇOS",
+    "item02": "COMO TRABALHAMOS",
+    "item03": "O MÉTODO",
+    "item04": "DEMOS",
+    "item05": "CONTATO"
+  },
+  "chrome": {
+    "ref": "REF",
+    "location": "LOCAL",
+    "status": "STATUS",
+    "edition": "EDIÇÃO"
+  },
+  "runningHead": {
+    "brand": "Void · Genesis",
+    "motto": "— Silent Cinema · MMXXVI —"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "chapter": {
+    "number": "§ 001",
+    "studioLabel": "AI-Native Software Studio"
+  },
+  "headline": {
+    "before": "Your software problem needs",
+    "accent": "an architect."
+  },
+  "sub": {
+    "part1": "Not a developer. Not a template.",
+    "part2": "A system engineered for how your business actually works."
+  },
+  "detail": "Senior engineers direct every decision. AI drives the velocity. The result: three times faster delivery, zero regressions in production, and a team that doesn't disappear after launch.",
+  "cta": {
+    "primary": "See What We Build",
+    "secondary": "Talk to Us"
+  },
+  "scrollPrompt": "Scroll · Genesis",
+  "figureLabel": "Fig. 001 · The Object",
+  "nav": {
+    "item00": "OPENING",
+    "item01": "SERVICES",
+    "item02": "HOW WE WORK",
+    "item03": "THE METHOD",
+    "item04": "DEMOS",
+    "item05": "CONTACT"
+  },
+  "chrome": {
+    "ref": "REF",
+    "location": "LOCATION",
+    "status": "STATUS",
+    "edition": "EDITION"
+  },
+  "runningHead": {
+    "brand": "Void · Genesis",
+    "motto": "— Silent Cinema · MMXXVI —"
+  }
+}
