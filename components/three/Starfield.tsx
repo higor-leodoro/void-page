@@ -1,7 +1,7 @@
 "use client";
 
 import { useFrame, useThree } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useBeatState } from "@/components/beat/useBeatState";
 
@@ -131,11 +131,23 @@ function makeLayer(cfg: LayerConfig) {
 export function Starfield() {
   const { camera } = useThree();
   const { isTransitioning } = useBeatState();
+  const groupEl = useRef<THREE.Group>(null);
+  const mouseTarget = useRef({ x: 0, y: 0 });
 
   const reducedMotion = useMemo(() => {
     if (typeof window === "undefined") return false;
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }, []);
+
+  useEffect(() => {
+    if (reducedMotion) return;
+    const onMove = (e: PointerEvent) => {
+      mouseTarget.current.x = e.clientX / window.innerWidth - 0.5;
+      mouseTarget.current.y = e.clientY / window.innerHeight - 0.5;
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    return () => window.removeEventListener("pointermove", onMove);
+  }, [reducedMotion]);
 
   const layers = useMemo(
     () =>
@@ -183,12 +195,20 @@ export function Starfield() {
       pts.position.y = (camera.position.y - anchor.current.y) * drift;
       pts.position.z = (camera.position.z - anchor.current.z) * drift;
     }
+
+    const g = groupEl.current;
+    if (g && !reducedMotion) {
+      const targetRotY = mouseTarget.current.x * 0.025;
+      const targetRotX = mouseTarget.current.y * 0.025;
+      g.rotation.y += (targetRotY - g.rotation.y) * 0.04;
+      g.rotation.x += (targetRotX - g.rotation.x) * 0.04;
+    }
     // noop read to keep lint happy
     void isTransitioning;
   });
 
   return (
-    <group>
+    <group ref={groupEl}>
       {layers.map((l, i) => (
         <points
           key={i}

@@ -10,8 +10,13 @@ import {
 } from "@react-three/postprocessing";
 import { BlendFunction, KernelSize } from "postprocessing";
 import { useEffect, useMemo, useState } from "react";
+import type { MutableRefObject } from "react";
 import { Vector2 } from "three";
 import { useBeatState } from "@/components/beat/useBeatState";
+
+type PostProcessProps = {
+  ringIntensityRef?: MutableRefObject<number | null>;
+};
 
 function useIsMobile() {
   const [m, setM] = useState(false);
@@ -39,8 +44,9 @@ function useReducedMotion() {
 
 const DOF_BEATS = new Set([2]);
 
-export function PostProcess() {
+export function PostProcess(_props: PostProcessProps = {}) {
   const { current } = useBeatState();
+  void _props;
   const mobile = useIsMobile();
   const reduced = useReducedMotion();
 

@@ -5,11 +5,13 @@ import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { AdditiveBlending } from "three";
 import { useBeatState } from "@/components/beat/useBeatState";
+import { useSunRef } from "./sunRef";
 import type { BeatId } from "@/types/beat";
 
 const BASE_RADIUS = 1.42;
 const LIMB_COLOR_HEX = "#3D3DE0";
 const CORE_COLOR_HEX = "#F5F0FF";
+const IDLE_ROT = 0.005;
 
 type Keyframe = {
   pos: THREE.Vector3;
@@ -18,21 +20,13 @@ type Keyframe = {
 };
 
 const KEYFRAMES: Record<BeatId, Keyframe> = {
-  0: { pos: new THREE.Vector3(-1.8, 0.55, -1.6), scale: 0.75, intensity: 0.35 },
-  1: { pos: new THREE.Vector3(-0.9, 0.5, -1.3), scale: 0.85, intensity: 0.55 },
-  2: { pos: new THREE.Vector3(-0.05, 0.45, -1.05), scale: 0.95, intensity: 0.75 },
-  3: { pos: new THREE.Vector3(0.3, 0.42, -0.9), scale: 1.02, intensity: 0.9 },
-  4: { pos: new THREE.Vector3(0.52, 0.41, -0.82), scale: 1.08, intensity: 1.05 },
-  5: { pos: new THREE.Vector3(0.6, 0.4, -0.8), scale: 1.15, intensity: 1.25 },
+  0: { pos: new THREE.Vector3(1.6, 0.1, -1.2), scale: 0.55, intensity: 0.45 },
+  1: { pos: new THREE.Vector3(1.1, 0.2, -1.0), scale: 0.65, intensity: 0.65 },
+  2: { pos: new THREE.Vector3(0.5, 0.3, -0.9), scale: 0.70, intensity: 0.80 },
+  3: { pos: new THREE.Vector3(0.1, 0.4, -0.8), scale: 0.75, intensity: 0.95 },
+  4: { pos: new THREE.Vector3(-0.1, 0.4, -0.7), scale: 0.85, intensity: 1.25 },
+  5: { pos: new THREE.Vector3(1.8, 0.3, -1.1), scale: 0.60, intensity: 0.90 },
 };
-
-const BEAT_5_EXIT: Keyframe = {
-  pos: new THREE.Vector3(1.9, 0.38, -1.05),
-  scale: 1.0,
-  intensity: 0.7,
-};
-
-const POST_TRANSIT_DRIFT_RATE = 0.018;
 
 const VERT = /* glsl */ `
   varying vec3 vNormal;
@@ -74,9 +68,9 @@ function applyLerp(
 export function GenesisSun() {
   const meshRef = useRef<THREE.Mesh>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
-  const driftStartRef = useRef<number | null>(null);
   const { current, previous, isTransitioning, cameraProgressRef } =
     useBeatState();
+  const sunRef = useSunRef();
 
   const uniforms = useMemo(
     () => ({
@@ -93,13 +87,15 @@ export function GenesisSun() {
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }, []);
 
-  useFrame((state) => {
+  useFrame((_, delta) => {
     const mesh = meshRef.current;
-    const mat = materialRef.current;
-    if (!mesh || !mat) return;
+    if (!mesh) return;
+    if (sunRef && sunRef.current !== mesh) {
+      sunRef.current = mesh;
+    }
 
     if (reducedMotion) {
-      const k = KEYFRAMES[5];
+      const k = KEYFRAMES[current];
       mesh.position.copy(k.pos);
       mesh.scale.setScalar(k.scale);
       uniforms.uIntensity.value = k.intensity;
@@ -110,41 +106,20 @@ export function GenesisSun() {
     let scale: number;
     let intensity: number;
 
-    if (current === 5 && isTransitioning) {
-      if (t < 0.5) {
-        const inner = applyLerp(KEYFRAMES[previous], KEYFRAMES[5], t * 2, workPos);
-        scale = inner.scale;
-        intensity = inner.intensity;
-      } else {
-        const inner = applyLerp(KEYFRAMES[5], BEAT_5_EXIT, (t - 0.5) * 2, workPos);
-        scale = inner.scale;
-        intensity = inner.intensity;
-      }
-      driftStartRef.current = null;
-    } else if (current === 5 && !isTransitioning) {
-      if (driftStartRef.current === null) {
-        driftStartRef.current = state.clock.elapsedTime;
-      }
-      const driftT = state.clock.elapsedTime - driftStartRef.current;
-      workPos.copy(BEAT_5_EXIT.pos);
-      workPos.x += driftT * POST_TRANSIT_DRIFT_RATE;
-      scale = BEAT_5_EXIT.scale;
-      intensity = BEAT_5_EXIT.intensity;
-    } else if (isTransitioning) {
+    if (isTransitioning) {
       const inner = applyLerp(KEYFRAMES[previous], KEYFRAMES[current], t, workPos);
       scale = inner.scale;
       intensity = inner.intensity;
-      driftStartRef.current = null;
     } else {
       const k = KEYFRAMES[current];
       workPos.copy(k.pos);
       scale = k.scale;
       intensity = k.intensity;
-      driftStartRef.current = null;
     }
 
     mesh.position.copy(workPos);
     mesh.scale.setScalar(scale);
+    mesh.rotation.z += delta * IDLE_ROT;
     uniforms.uIntensity.value = intensity;
   });
 
