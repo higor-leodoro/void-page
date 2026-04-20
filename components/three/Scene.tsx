@@ -1,18 +1,13 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { Suspense, lazy, useEffect, useState } from "react";
-import { BeatGate } from "./BeatGate";
+import { Suspense, useEffect, useState } from "react";
 import { CameraRig } from "./CameraRig";
-import { DemoVessels } from "./DemoVessels";
-import { MethodRings } from "./MethodRings";
-import { OrbitalDebris } from "./OrbitalDebris";
+import { GenesisSun } from "./GenesisSun";
 import { PostProcess } from "./PostProcess";
 import { SpaceBackground } from "./SpaceBackground";
-import { Sphere } from "./Sphere";
 import { Starfield } from "./Starfield";
-
-const NebulaDust = lazy(() => import("./NebulaDust"));
+import { VoidSphere } from "./VoidSphere";
 
 function useIsMobile() {
   const [m, setM] = useState(false);
@@ -49,19 +44,8 @@ export default function Scene() {
         <Suspense fallback={null}>
           <SpaceBackground />
           <Starfield />
-          <Sphere />
-          <BeatGate beats={1}>
-            <OrbitalDebris />
-          </BeatGate>
-          <BeatGate beats={3}>
-            <MethodRings />
-            <Suspense fallback={null}>
-              <NebulaDust />
-            </Suspense>
-          </BeatGate>
-          <BeatGate beats={4}>
-            <DemoVessels />
-          </BeatGate>
+          <VoidSphere />
+          <GenesisSun />
         </Suspense>
         <CameraRig />
         <PostProcess />

@@ -37,7 +37,7 @@ function useReducedMotion() {
   return r;
 }
 
-const DOF_BEATS = new Set([2, 5]);
+const DOF_BEATS = new Set([2]);
 
 export function PostProcess() {
   const { current } = useBeatState();
