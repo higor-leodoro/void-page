@@ -29,7 +29,7 @@ export function HeroStack() {
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.0, delay: 0.9, ease: EASE }}
-          className="font-display font-black leading-[0.96] text-paper"
+          className="font-display font-black leading-[0.96] text-paper uppercase"
           style={{
             fontSize: "clamp(52px, 7.2vw, 112px)",
             letterSpacing: "-0.025em",

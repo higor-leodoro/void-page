@@ -5,23 +5,20 @@ import { useTranslations } from "next-intl";
 import { Bracket } from "@/components/primitives/Bracket";
 import { useBeatState } from "@/components/beat/useBeatState";
 
-const FIGURE_TITLES: Record<number, string> = {
-  0: "figureLabel",
-  1: "nav.item01",
-  2: "nav.item02",
-  3: "nav.item03",
-  4: "nav.item04",
-  5: "nav.item05",
+const FIGURE_KEYS: Record<number, string> = {
+  0: "figureLabels.beat0",
+  1: "figureLabels.beat1",
+  2: "figureLabels.beat2",
+  3: "figureLabels.beat3",
+  4: "figureLabels.beat4",
+  5: "figureLabels.beat5",
 };
 
 export function RunningHead() {
   const t = useTranslations();
   const { current } = useBeatState();
 
-  const figureText =
-    current === 0
-      ? t("figureLabel")
-      : `Fig. 00${current + 1} · ${t(FIGURE_TITLES[current])}`;
+  const figureText = t(FIGURE_KEYS[current]);
 
   return (
     <motion.header

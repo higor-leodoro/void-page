@@ -28,7 +28,7 @@ export function HeroClient() {
       />
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-[25] h-20"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-25 h-20"
         style={{ background: "linear-gradient(to bottom, transparent, #000)" }}
       />
       <BeatStage />
