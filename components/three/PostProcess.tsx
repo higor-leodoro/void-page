@@ -9,10 +9,19 @@ import {
   Vignette,
 } from "@react-three/postprocessing";
 import { BlendFunction, KernelSize } from "postprocessing";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { MutableRefObject } from "react";
+import { useFrame } from "@react-three/fiber";
 import { Vector2 } from "three";
 import { useBeatState } from "@/components/beat/useBeatState";
+import { useNormalizedMouse } from "@/hooks/useNormalizedMouse";
+import {
+  CursorLensEffect,
+  CursorLensEffectImpl,
+} from "./effects/CursorLensEffect";
+
+const CURSOR_LENS_STRENGTH = 0.08;
+const CURSOR_LENS_RADIUS = 0.25;
 
 type PostProcessProps = {
   ringIntensityRef?: MutableRefObject<number | null>;
@@ -53,6 +62,20 @@ export function PostProcess(_props: PostProcessProps = {}) {
   const caOffset = useMemo<Vector2>(() => new Vector2(0.0009, 0.0007), []);
   const bloomThreshold = current === 4 ? 0.78 : 0.1;
 
+  const mouseRef = useNormalizedMouse();
+  const lensRef = useRef<CursorLensEffectImpl>(null);
+
+  useFrame((state) => {
+    const effect = lensRef.current;
+    if (!effect) return;
+    const u = effect.uniforms;
+    const uMouse = u.get("uMouse")!.value as Vector2;
+    uMouse.set(mouseRef.current.x, mouseRef.current.y);
+    u.get("uAspect")!.value = state.size.width / state.size.height;
+    u.get("uStrength")!.value = reduced ? 0 : CURSOR_LENS_STRENGTH;
+    u.get("uRadius")!.value = CURSOR_LENS_RADIUS;
+  });
+
   if (reduced) return null;
 
   const dofOn = !mobile && DOF_BEATS.has(current);
@@ -67,6 +90,7 @@ export function PostProcess(_props: PostProcessProps = {}) {
         radius={0.7}
         kernelSize={KernelSize.MEDIUM}
       />
+      <CursorLensEffect ref={lensRef} />
       <ChromaticAberration
         offset={caOffset}
         radialModulation

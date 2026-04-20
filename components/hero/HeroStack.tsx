@@ -11,8 +11,8 @@ export function HeroStack() {
   const t = useTranslations();
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-8 pb-20 md:px-12 md:pb-24">
-      <div className="pointer-events-auto max-w-[760px]">
+    <div className="pointer-events-none absolute inset-0 z-40 flex items-end px-8 pb-20 md:items-center md:px-12 md:pb-0">
+      <div className="pointer-events-auto max-w-[760px] ml-32">
         <motion.div
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}

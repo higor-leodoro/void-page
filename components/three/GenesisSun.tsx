@@ -1,7 +1,7 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useBeatState } from "@/components/beat/useBeatState";
 import { useSunRef } from "./sunRef";
@@ -72,15 +72,65 @@ varying vec3 vViewDir;
 uniform vec3 uInnerColor;
 uniform vec3 uOuterColor;
 uniform float uOpacity;
+uniform float uTime;
+
+float hash21(vec2 p) {
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+float vnoise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float a = hash21(i);
+  float b = hash21(i + vec2(1.0, 0.0));
+  float c = hash21(i + vec2(0.0, 1.0));
+  float d = hash21(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
 void main() {
   float facing = clamp(dot(normalize(vNormal), normalize(vViewDir)), 0.0, 1.0);
   float rim = 1.0 - facing;
-  float alpha = pow(rim, 2.2);
+  float alpha = pow(rim, 2.0 + sin(uTime * 4.0) * 0.8); 
+  float angle = atan(vNormal.y, vNormal.x);
+  float n = vnoise(vec2(angle * 3.0, uTime * 1.5)) * 2.0 - 1.0;
+  alpha *= 1.0 + n * 0.7;
   float colMix = smoothstep(0.35, 1.0, rim);
   vec3 col = mix(uInnerColor, uOuterColor, colMix);
   gl_FragColor = vec4(col, alpha * uOpacity);
 }
 `;
+
+function makeCoreMaterial(): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    vertexShader: SUN_VERT,
+    fragmentShader: CORE_FRAG,
+    uniforms: {
+      uCenterColor: { value: new THREE.Color("#FFF") },
+      uSurfaceColor: { value: new THREE.Color("#FFF") },
+      uIntensity: { value: 3.0 },
+    },
+    toneMapped: false,
+  });
+}
+
+function makeCoronaMaterial(): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    vertexShader: SUN_VERT,
+    fragmentShader: CORONA_FRAG,
+    uniforms: {
+      uInnerColor: { value: new THREE.Color("#2B2BC2") },
+      uOuterColor: { value: new THREE.Color("#14145C") },
+      uOpacity: { value: 1.0 },
+      uTime: { value: 0 },
+    },
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    toneMapped: false,
+  });
+}
 
 export function GenesisSun() {
   const groupRef = useRef<THREE.Group>(null);
@@ -88,23 +138,29 @@ export function GenesisSun() {
   const coronaMeshRef = useRef<THREE.Mesh>(null);
   const sunRef = useSunRef();
 
-  const coreUniforms = useMemo(
-    () => ({
-      uCenterColor: { value: new THREE.Color("#FFF") },
-      uSurfaceColor: { value: new THREE.Color("#FFF") },
-      uIntensity: { value: 3.0 },
-    }),
-    [],
-  );
+  const coreMatRef = useRef<THREE.ShaderMaterial | null>(null);
+  const coronaMatRef = useRef<THREE.ShaderMaterial | null>(null);
 
-  const coronaUniforms = useMemo(
-    () => ({
-      uInnerColor: { value: new THREE.Color("#2B2BC2") },
-      uOuterColor: { value: new THREE.Color("#14145C") },
-      uOpacity: { value: 1.0 },
-    }),
-    [],
-  );
+  useLayoutEffect(() => {
+    const coreMat = makeCoreMaterial();
+    const coronaMat = makeCoronaMaterial();
+    coreMatRef.current = coreMat;
+    coronaMatRef.current = coronaMat;
+    const coreMesh = coreMeshRef.current;
+    const coronaMesh = coronaMeshRef.current;
+    if (coreMesh) {
+      (coreMesh.material as THREE.Material | undefined)?.dispose?.();
+      coreMesh.material = coreMat;
+    }
+    if (coronaMesh) {
+      (coronaMesh.material as THREE.Material | undefined)?.dispose?.();
+      coronaMesh.material = coronaMat;
+    }
+    return () => {
+      coreMat.dispose();
+      coronaMat.dispose();
+    };
+  }, []);
 
   useEffect(() => {
     if (sunRef && coreMeshRef.current) {
@@ -124,11 +180,11 @@ export function GenesisSun() {
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }, []);
 
-  useFrame(() => {
+  useFrame((state) => {
     const group = groupRef.current;
-    const coreMesh = coreMeshRef.current;
-    const coronaMesh = coronaMeshRef.current;
-    if (!group || !coreMesh || !coronaMesh) return;
+    const coreMat = coreMatRef.current;
+    const coronaMat = coronaMatRef.current;
+    if (!group || !coreMat || !coronaMat) return;
 
     let scale: number;
     let intensity: number;
@@ -160,34 +216,18 @@ export function GenesisSun() {
     group.position.copy(workPos);
     group.scale.setScalar(scale * BASE_RADIUS);
 
-    const coreMat = coreMesh.material as THREE.ShaderMaterial;
-    const coronaMat = coronaMesh.material as THREE.ShaderMaterial;
     coreMat.uniforms.uIntensity.value = intensity * CORE_INTENSITY_SCALE;
     coronaMat.uniforms.uOpacity.value = intensity * CORONA_OPACITY_SCALE;
+    coronaMat.uniforms.uTime.value = state.clock.elapsedTime;
   });
 
   return (
     <group ref={groupRef}>
       <mesh ref={coreMeshRef}>
         <sphereGeometry args={[CORE_RADIUS, 64, 64]} />
-        <shaderMaterial
-          vertexShader={SUN_VERT}
-          fragmentShader={CORE_FRAG}
-          uniforms={coreUniforms}
-          toneMapped={false}
-        />
       </mesh>
       <mesh ref={coronaMeshRef}>
         <sphereGeometry args={[CORE_RADIUS * CORONA_RADIUS_MULT, 64, 64]} />
-        <shaderMaterial
-          vertexShader={SUN_VERT}
-          fragmentShader={CORONA_FRAG}
-          uniforms={coronaUniforms}
-          transparent
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          toneMapped={false}
-        />
       </mesh>
     </group>
   );

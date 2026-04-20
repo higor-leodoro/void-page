@@ -15,11 +15,12 @@ type LayerConfig = {
   paperDimRatio: number;
   parallax: number; // 1 = no drift, 0 = full drift
   twinkleFreq: [number, number];
+  driftYaw: number; // radians per second, autonomous slow rotation
 };
 
 const LAYERS: LayerConfig[] = [
   {
-    count: 2200,
+    count: 3500,
     radius: 45,
     sizeMin: 0.18,
     sizeMax: 0.45,
@@ -28,9 +29,10 @@ const LAYERS: LayerConfig[] = [
     paperDimRatio: 0.08,
     parallax: 1.0,
     twinkleFreq: [0.25, 0.45],
+    driftYaw: 0.0015,
   },
   {
-    count: 600,
+    count: 900,
     radius: 20,
     sizeMin: 0.25,
     sizeMax: 0.8,
@@ -39,9 +41,10 @@ const LAYERS: LayerConfig[] = [
     paperDimRatio: 0.08,
     parallax: 0.6,
     twinkleFreq: [0.3, 0.55],
+    driftYaw: 0.0025,
   },
   {
-    count: 120,
+    count: 160,
     radius: 8,
     sizeMin: 0.4,
     sizeMax: 1.3,
@@ -50,6 +53,7 @@ const LAYERS: LayerConfig[] = [
     paperDimRatio: 0.1,
     parallax: 0.3,
     twinkleFreq: [0.35, 0.6],
+    driftYaw: 0.004,
   },
 ];
 
@@ -174,7 +178,7 @@ export function Starfield() {
   const anchor = useRef(new THREE.Vector3());
   const initialized = useRef(false);
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     if (!initialized.current) {
       anchor.current.copy(camera.position);
       initialized.current = true;
@@ -187,8 +191,10 @@ export function Starfield() {
       if (!pts) continue;
       if (reducedMotion) {
         pts.position.set(0, 0, 0);
+        pts.rotation.y = 0;
         continue;
       }
+      pts.rotation.y += l.cfg.driftYaw * delta;
       // parallax: farther layers drift less relative to camera motion
       const drift = 1 - l.cfg.parallax;
       pts.position.x = (camera.position.x - anchor.current.x) * drift;
