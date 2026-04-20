@@ -1,17 +1,17 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { AdditiveBlending } from "three";
 import { useBeatState } from "@/components/beat/useBeatState";
 import { useSunRef } from "./sunRef";
 import type { BeatId } from "@/types/beat";
 
-const BASE_RADIUS = 1.42;
-const LIMB_COLOR_HEX = "#3D3DE0";
-const CORE_COLOR_HEX = "#F5F0FF";
-const IDLE_ROT = 0.005;
+const BASE_RADIUS = 0.8;
+const CORE_RADIUS = 0.5;
+const CORONA_RADIUS_MULT = 1.1;
+const CORE_INTENSITY_SCALE = 4.5;
+const CORONA_OPACITY_SCALE = 1.9;
 
 type Keyframe = {
   pos: THREE.Vector3;
@@ -20,37 +20,13 @@ type Keyframe = {
 };
 
 const KEYFRAMES: Record<BeatId, Keyframe> = {
-  0: { pos: new THREE.Vector3(1.6, 0.1, -1.2), scale: 0.55, intensity: 0.45 },
+  0: { pos: new THREE.Vector3(2.3, 0.1, -1.2), scale: 0.55, intensity: 0.45 },
   1: { pos: new THREE.Vector3(1.1, 0.2, -1.0), scale: 0.65, intensity: 0.65 },
-  2: { pos: new THREE.Vector3(0.5, 0.3, -0.9), scale: 0.70, intensity: 0.80 },
+  2: { pos: new THREE.Vector3(0.5, 0.3, -0.9), scale: 0.7, intensity: 0.8 },
   3: { pos: new THREE.Vector3(0.1, 0.4, -0.8), scale: 0.75, intensity: 0.95 },
   4: { pos: new THREE.Vector3(-0.1, 0.4, -0.7), scale: 0.85, intensity: 1.25 },
-  5: { pos: new THREE.Vector3(1.8, 0.3, -1.1), scale: 0.60, intensity: 0.90 },
+  5: { pos: new THREE.Vector3(1.8, 0.3, -1.1), scale: 0.6, intensity: 0 },
 };
-
-const VERT = /* glsl */ `
-  varying vec3 vNormal;
-  void main() {
-    vNormal = normalize(normalMatrix * normal);
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-const FRAG = /* glsl */ `
-  precision highp float;
-  uniform vec3 uLimbColor;
-  uniform vec3 uCoreColor;
-  uniform float uIntensity;
-  varying vec3 vNormal;
-  void main() {
-    float n = clamp(vNormal.z, 0.0, 1.0);
-    float coreMix = pow(n, 3.5);
-    vec3 col = mix(uLimbColor, uCoreColor, coreMix);
-    float brightness = pow(n, 1.2) * uIntensity * 1.9;
-    float alpha = pow(n, 1.6);
-    gl_FragColor = vec4(col * brightness, alpha);
-  }
-`;
 
 function applyLerp(
   a: Keyframe,
@@ -65,21 +41,82 @@ function applyLerp(
   };
 }
 
+const SUN_VERT = /* glsl */ `
+varying vec3 vNormal;
+varying vec3 vViewDir;
+void main() {
+  vec4 mv = modelViewMatrix * vec4(position, 1.0);
+  vNormal = normalize(normalMatrix * normal);
+  vViewDir = normalize(-mv.xyz);
+  gl_Position = projectionMatrix * mv;
+}
+`;
+
+const CORE_FRAG = /* glsl */ `
+varying vec3 vNormal;
+varying vec3 vViewDir;
+uniform vec3 uCenterColor;
+uniform vec3 uSurfaceColor;
+uniform float uIntensity;
+void main() {
+  float facing = clamp(dot(normalize(vNormal), normalize(vViewDir)), 0.0, 1.0);
+  float t = smoothstep(0.7, 1.0, facing);
+  vec3 col = mix(uSurfaceColor, uCenterColor, t);
+  gl_FragColor = vec4(col * uIntensity, 1.0);
+}
+`;
+
+const CORONA_FRAG = /* glsl */ `
+varying vec3 vNormal;
+varying vec3 vViewDir;
+uniform vec3 uInnerColor;
+uniform vec3 uOuterColor;
+uniform float uOpacity;
+void main() {
+  float facing = clamp(dot(normalize(vNormal), normalize(vViewDir)), 0.0, 1.0);
+  float rim = 1.0 - facing;
+  float alpha = pow(rim, 2.2);
+  float colMix = smoothstep(0.35, 1.0, rim);
+  vec3 col = mix(uInnerColor, uOuterColor, colMix);
+  gl_FragColor = vec4(col, alpha * uOpacity);
+}
+`;
+
 export function GenesisSun() {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const materialRef = useRef<THREE.ShaderMaterial>(null);
-  const { current, previous, isTransitioning, cameraProgressRef } =
-    useBeatState();
+  const groupRef = useRef<THREE.Group>(null);
+  const coreMeshRef = useRef<THREE.Mesh>(null);
+  const coronaMeshRef = useRef<THREE.Mesh>(null);
   const sunRef = useSunRef();
 
-  const uniforms = useMemo(
+  const coreUniforms = useMemo(
     () => ({
-      uLimbColor: { value: new THREE.Color(LIMB_COLOR_HEX) },
-      uCoreColor: { value: new THREE.Color(CORE_COLOR_HEX) },
-      uIntensity: { value: 1.0 },
+      uCenterColor: { value: new THREE.Color("#FFF") },
+      uSurfaceColor: { value: new THREE.Color("#FFF") },
+      uIntensity: { value: 3.0 },
     }),
     [],
   );
+
+  const coronaUniforms = useMemo(
+    () => ({
+      uInnerColor: { value: new THREE.Color("#2B2BC2") },
+      uOuterColor: { value: new THREE.Color("#14145C") },
+      uOpacity: { value: 1.0 },
+    }),
+    [],
+  );
+
+  useEffect(() => {
+    if (sunRef && coreMeshRef.current) {
+      sunRef.current = coreMeshRef.current;
+    }
+    return () => {
+      if (sunRef) sunRef.current = null;
+    };
+  }, [sunRef]);
+
+  const { current, previous, isTransitioning, cameraProgressRef } =
+    useBeatState();
   const workPos = useMemo(() => new THREE.Vector3(), []);
 
   const reducedMotion = useMemo(() => {
@@ -87,55 +124,71 @@ export function GenesisSun() {
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }, []);
 
-  useFrame((_, delta) => {
-    const mesh = meshRef.current;
-    if (!mesh) return;
-    if (sunRef && sunRef.current !== mesh) {
-      sunRef.current = mesh;
-    }
+  useFrame(() => {
+    const group = groupRef.current;
+    const coreMesh = coreMeshRef.current;
+    const coronaMesh = coronaMeshRef.current;
+    if (!group || !coreMesh || !coronaMesh) return;
 
-    if (reducedMotion) {
-      const k = KEYFRAMES[current];
-      mesh.position.copy(k.pos);
-      mesh.scale.setScalar(k.scale);
-      uniforms.uIntensity.value = k.intensity;
-      return;
-    }
-
-    const t = THREE.MathUtils.clamp(cameraProgressRef.current.value, 0, 1);
     let scale: number;
     let intensity: number;
 
-    if (isTransitioning) {
-      const inner = applyLerp(KEYFRAMES[previous], KEYFRAMES[current], t, workPos);
-      scale = inner.scale;
-      intensity = inner.intensity;
-    } else {
+    if (reducedMotion) {
       const k = KEYFRAMES[current];
       workPos.copy(k.pos);
       scale = k.scale;
       intensity = k.intensity;
+    } else {
+      const t = THREE.MathUtils.clamp(cameraProgressRef.current.value, 0, 1);
+      if (isTransitioning) {
+        const inner = applyLerp(
+          KEYFRAMES[previous],
+          KEYFRAMES[current],
+          t,
+          workPos,
+        );
+        scale = inner.scale;
+        intensity = inner.intensity;
+      } else {
+        const k = KEYFRAMES[current];
+        workPos.copy(k.pos);
+        scale = k.scale;
+        intensity = k.intensity;
+      }
     }
 
-    mesh.position.copy(workPos);
-    mesh.scale.setScalar(scale);
-    mesh.rotation.z += delta * IDLE_ROT;
-    uniforms.uIntensity.value = intensity;
+    group.position.copy(workPos);
+    group.scale.setScalar(scale * BASE_RADIUS);
+
+    const coreMat = coreMesh.material as THREE.ShaderMaterial;
+    const coronaMat = coronaMesh.material as THREE.ShaderMaterial;
+    coreMat.uniforms.uIntensity.value = intensity * CORE_INTENSITY_SCALE;
+    coronaMat.uniforms.uOpacity.value = intensity * CORONA_OPACITY_SCALE;
   });
 
   return (
-    <mesh ref={meshRef} renderOrder={-1}>
-      <sphereGeometry args={[BASE_RADIUS, 64, 64]} />
-      <shaderMaterial
-        ref={materialRef}
-        uniforms={uniforms}
-        vertexShader={VERT}
-        fragmentShader={FRAG}
-        transparent
-        depthWrite={false}
-        toneMapped={false}
-        blending={AdditiveBlending}
-      />
-    </mesh>
+    <group ref={groupRef}>
+      <mesh ref={coreMeshRef}>
+        <sphereGeometry args={[CORE_RADIUS, 64, 64]} />
+        <shaderMaterial
+          vertexShader={SUN_VERT}
+          fragmentShader={CORE_FRAG}
+          uniforms={coreUniforms}
+          toneMapped={false}
+        />
+      </mesh>
+      <mesh ref={coronaMeshRef}>
+        <sphereGeometry args={[CORE_RADIUS * CORONA_RADIUS_MULT, 64, 64]} />
+        <shaderMaterial
+          vertexShader={SUN_VERT}
+          fragmentShader={CORONA_FRAG}
+          uniforms={coronaUniforms}
+          transparent
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          toneMapped={false}
+        />
+      </mesh>
+    </group>
   );
 }

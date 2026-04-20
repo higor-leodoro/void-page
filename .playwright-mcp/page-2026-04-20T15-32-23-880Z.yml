@@ -1,0 +1,62 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - img
+    - img
+    - img
+    - img
+    - generic [ref=e3]:
+      - generic [ref=e5]:
+        - img [ref=e7]
+        - generic [ref=e10]: § 001
+        - generic [ref=e11]: Estúdio de Software AI-Native
+      - heading "Seu problema de software precisa de um arquiteto." [level=1] [ref=e13]
+      - paragraph [ref=e14]: Não é um desenvolvedor. Não é um template. Um sistema projetado para como sua empresa realmente funciona.
+      - paragraph [ref=e15]: "Engenheiros sênior conduzem cada decisão. IA acelera a velocidade. O resultado: entregas três vezes mais rápidas, zero regressões em produção, e um time que não desaparece depois do lançamento."
+      - generic [ref=e16]:
+        - link "Veja o Que Construímos" [ref=e17] [cursor=pointer]:
+          - /url: "#demos"
+          - text: Veja o Que Construímos
+          - img [ref=e18]
+        - link "Fale Conosco" [ref=e20] [cursor=pointer]:
+          - /url: "#contact"
+    - generic "Site header" [ref=e21]:
+      - generic [ref=e22]:
+        - img [ref=e23]
+        - generic [ref=e26]: Void · Genesis
+      - navigation "Chapter navigation" [ref=e27]:
+        - list [ref=e28]:
+          - listitem [ref=e29]:
+            - button "00 INÍCIO" [ref=e30]:
+              - generic [ref=e31]: "00"
+              - generic [ref=e32]: INÍCIO
+          - listitem [ref=e33]:
+            - button "01 SERVIÇOS" [ref=e34]:
+              - generic [ref=e35]: "01"
+              - generic [ref=e36]: SERVIÇOS
+          - listitem [ref=e37]:
+            - button "02 COMO TRABALHAMOS" [ref=e38]:
+              - generic [ref=e39]: "02"
+              - generic [ref=e40]: COMO TRABALHAMOS
+          - listitem [ref=e41]:
+            - button "03 O MÉTODO" [ref=e42]:
+              - generic [ref=e43]: "03"
+              - generic [ref=e44]: O MÉTODO
+          - listitem [ref=e45]:
+            - button "04 DEMOS" [ref=e46]:
+              - generic [ref=e47]: "04"
+              - generic [ref=e48]: DEMOS
+          - listitem [ref=e49]:
+            - button "05 CONTATO" [ref=e50]:
+              - generic [ref=e51]: "05"
+              - generic [ref=e52]: CONTATO
+      - generic [ref=e54]:
+        - generic [ref=e55]:
+          - link "PT" [ref=e56] [cursor=pointer]:
+            - /url: /pt
+          - generic [ref=e57]: ·
+        - link "EN" [ref=e59] [cursor=pointer]:
+          - /url: /en
+    - generic:
+      - generic: Rolar · Genesis
+  - button "Open Next.js Dev Tools" [ref=e65] [cursor=pointer]:
+    - img [ref=e66]

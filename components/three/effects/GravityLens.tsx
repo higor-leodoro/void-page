@@ -32,16 +32,19 @@ export const GravityLens = forwardRef<GravityLensEffect, Props>(function Gravity
 
   const tmpCenter = useMemo(() => new Vector3(), []);
   const tmpEdge = useMemo(() => new Vector3(), []);
+  const tmpScale = useMemo(() => new Vector3(), []);
 
   useFrame(({ camera }) => {
     const mesh = sunRef?.current;
     if (!mesh) return;
 
     mesh.getWorldPosition(tmpCenter);
+    mesh.getWorldScale(tmpScale);
 
     const geom = mesh.geometry as { parameters?: { radius?: number } } & typeof mesh.geometry;
+    const localRadius = geom?.parameters?.radius ?? 1;
     const worldRadius =
-      (geom.parameters?.radius ?? 1) * Math.max(mesh.scale.x, mesh.scale.y, mesh.scale.z);
+      localRadius * Math.max(tmpScale.x, tmpScale.y, tmpScale.z);
 
     tmpEdge.copy(tmpCenter);
     const right = tmpEdge.set(1, 0, 0).applyQuaternion(camera.quaternion).multiplyScalar(worldRadius);

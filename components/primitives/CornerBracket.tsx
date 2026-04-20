@@ -19,7 +19,7 @@ const POSITION: Record<Corner, string> = {
   br: "bottom-6 right-6",
 };
 
-export function CornerBracket({ corner, size = 28 }: Props) {
+export function CornerBracket({ corner, size = 52 }: Props) {
   return (
     <svg
       width={size}
@@ -35,12 +35,6 @@ export function CornerBracket({ corner, size = 28 }: Props) {
         stroke="currentColor"
         strokeWidth="1"
         strokeLinecap="square"
-      />
-      <path
-        d="M5 1 L1 5"
-        stroke="currentColor"
-        strokeWidth="0.6"
-        opacity="0.55"
       />
     </svg>
   );

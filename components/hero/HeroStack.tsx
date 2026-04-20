@@ -31,7 +31,7 @@ export function HeroStack() {
           transition={{ duration: 1.0, delay: 0.9, ease: EASE }}
           className="font-display font-black leading-[0.96] text-paper uppercase"
           style={{
-            fontSize: "clamp(52px, 7.2vw, 112px)",
+            fontSize: "clamp(44px, 5.8vw, 88px)",
             letterSpacing: "-0.025em",
           }}
         >

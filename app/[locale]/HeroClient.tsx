@@ -7,7 +7,6 @@ import { BeatProvider } from "@/components/beat/BeatContext";
 import { BeatController } from "@/components/beat/BeatController";
 import { BeatStage } from "@/components/beat/BeatStage";
 import { RunningHead } from "@/components/chrome/RunningHead";
-import { ChapterNav } from "@/components/chrome/ChapterNav";
 import { ScrollPrompt } from "@/components/chrome/ScrollPrompt";
 import type { SunScreenSample } from "@/components/three/sunRef";
 
@@ -49,7 +48,6 @@ export function HeroClient() {
       />
       <BeatStage />
       <RunningHead />
-      <ChapterNav />
       <ScrollPrompt />
       <BeatController />
     </BeatProvider>

@@ -51,6 +51,7 @@ export function PostProcess(_props: PostProcessProps = {}) {
   const reduced = useReducedMotion();
 
   const caOffset = useMemo<Vector2>(() => new Vector2(0.0009, 0.0007), []);
+  const bloomThreshold = current === 4 ? 0.78 : 0.1;
 
   if (reduced) return null;
 
@@ -59,12 +60,12 @@ export function PostProcess(_props: PostProcessProps = {}) {
   return (
     <EffectComposer multisampling={0}>
       <Bloom
-        intensity={1.6}
-        luminanceThreshold={0.22}
-        luminanceSmoothing={0.45}
+        intensity={1}
+        luminanceThreshold={bloomThreshold}
+        luminanceSmoothing={0.2}
         mipmapBlur
-        radius={0.85}
-        kernelSize={mobile ? KernelSize.SMALL : KernelSize.LARGE}
+        radius={0.7}
+        kernelSize={KernelSize.MEDIUM}
       />
       <ChromaticAberration
         offset={caOffset}
@@ -75,7 +76,11 @@ export function PostProcess(_props: PostProcessProps = {}) {
       <Vignette offset={0.32} darkness={0.62} eskil={false} />
       <Noise opacity={mobile ? 0.04 : 0.075} premultiply />
       {dofOn ? (
-        <DepthOfField focusDistance={0.02} focalLength={0.04} bokehScale={2.8} />
+        <DepthOfField
+          focusDistance={0.02}
+          focalLength={0.04}
+          bokehScale={2.8}
+        />
       ) : (
         <></>
       )}
